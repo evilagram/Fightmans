@@ -33,6 +33,8 @@ class inputMotion{
     }
     public string name;
     List<dirUnit> inputList;
+    public static List<int> dirBuffer;
+    bool faceLeft = false;
 
     public inputMotion Add(int direction,int window, bool strict){
         inputList.Reverse();//the list needs to be reversed, because you're always checking the window of the last input first
@@ -41,16 +43,18 @@ class inputMotion{
         return this; //lets you add immediately after instantiating the object, and chain more adds
     }
 
-    public bool checkValidInput(){
+    public bool checkValidInput(List<int> buffer, bool faceL = false){
+        dirBuffer = buffer;
+        faceLeft = faceL;
         return checkValidInput(0, 0); //this means I can publicly call checkValidInput() on the object without needing to specify 0 every time
     }
 
     //this is a recursive function, so that I can nest multiple for loops inside of each other arbitrarily.
     private bool checkValidInput(int curInput, int bufferpos){ //takes in the current buffer (unnecessary if the buffer is stored publicly), current position in the input list as an int
         for(int i = bufferpos; i < bufferpos + inputList[curInput].window; i++){
-            if(GameController.dirBuffer[i] == 5) continue; //if it's a blank input this frame, skips to the next frame
-            if(checkDir(GameController.dirBuffer[i], inputList[curInput].direction, inputList[curInput].strict)){
-                Debug.Log("Check success, iter: "+ curInput + " curinput: " + GameController.dirBuffer[i] + " i: " + i + " target: " + inputList[curInput].direction);
+            if(dirBuffer[i] == dirBuffer[i+1]) continue; //if the next frame has the same input as this one, skips to the next frame
+            if(checkDir(dirBuffer[i], inputList[curInput].direction, inputList[curInput].strict)){
+                //Debug.Log("checking, place in list: "+ curInput + " curinput: " + dirBuffer[i] + " i: " + i + " target: " + inputList[curInput].direction);
                 if (curInput+1 >= inputList.Count) { //if there's no input at this point in the list, we're done, return true
                     Debug.Log(name);
                     return true;
@@ -66,9 +70,22 @@ class inputMotion{
     //to get the correct effect. This could be "fixed" by having the direction correction over in the directional buffer instead.
     bool checkDir(int curDir, int targetDir, bool strict){
         //step 1, correct the currently held direction based on the facing direction, so 6 is forward, and 4 is back.
-        if (false /*facing left*/){ //TODO: add a way to detect facing direction
-            if (curDir == 7 || curDir == 4 || curDir == 1) curDir += 2;
-            else if (curDir == 9 || curDir == 6 || curDir == 3) curDir -= 2;
+        if (faceLeft){
+            switch (curDir)
+            {
+                case 7:
+                case 4:
+                case 1:
+                curDir += 2;
+                break;
+                case 9:
+                case 6:
+                case 3:
+                curDir -= 2;
+                break;
+                default:
+                break;
+            }
         }
         
         if (strict == true){
